@@ -1,0 +1,11 @@
+# Archivos y carpetas ignorados por git
+*.log
+*.tmp
+*.swp
+.DS_Store
+node_modules/
+venv/
+__pycache__/
+.env
+.idea/
+.vscode/
