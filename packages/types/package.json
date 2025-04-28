@@ -6,7 +6,9 @@
   "types": "./index.ts",
   "scripts": {
     "lint": "eslint .",
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "devDependencies": {
     "eslint": "^8.54.0",
