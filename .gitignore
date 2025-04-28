@@ -75,3 +75,4 @@ tasks/
 .cache
 .eslintcache
 .stylelintcache
+*storybook.log

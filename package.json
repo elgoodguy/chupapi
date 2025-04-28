@@ -12,7 +12,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "clean": "turbo run clean && rm -rf node_modules",
     "test": "turbo run test",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "storybook": "turbo run storybook --filter=@super-app/ui",
+    "build-storybook": "turbo run build-storybook --filter=@super-app/ui"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.13.1",
