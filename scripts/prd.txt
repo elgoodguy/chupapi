@@ -1,0 +1,497 @@
+<context>
+
+# Overview  
+Super‑App Delivery es una plataforma multi‑tenant que opera como un “Shopify de última milla”.  
+Integra tres PWAs —**Customer**, **Admin** y **Driver**— alojadas en un monorepo Nx/Turborepo y un backend **Supabase MCP**.  
+Permite que cualquier visitante realice pedidos **como invitado** (is_anonymous) y luego, con un solo click, convierta su cuenta para desbloquear **Wallet** y funciones sociales.  
+El sistema resuelve:  
+- Compra y entrega inmediata de productos de conveniencia.  
+- Gestión centralizada de catálogo, promociones y operaciones mediante RBAC.  
+- Incentivos de fidelidad a través de un esquema de **cashback tokenizado por grupo**.  
+- Contabilidad unificada con **Stripe Elements** (Tarjeta MXN) y registro de pagos Clip/Efectivo.  
+Su arquitectura está pensada para escalar a verticales futuras (hogar, reservas, ride‑hailing) sin refactor mayor.
+
+# Core Features  
+- **Guest Checkout & Anonymous Accounts**  
+  - *What*: Finalizar compra sin registro; captura Nombre y Teléfono; UID `is_anonymous = TRUE`.  
+  - *Why*: Reduce fricción → +conversion; estilo Shopify.  
+  - *How*: Edge Fn `merge_anonymous_account` fusiona datos al registrarse.
+
+- **Authentication & Identity Upgrade**  
+  - *What*: Tel+OTP, Email+Pass, Google; SetupIntents para guardar tarjeta.  
+  - *Why*: Habilita Wallet, histórico y notificaciones push personalizadas.  
+  - *How*: Supabase Auth; OTP sólo al registrarse/recuperar; tokens JWT firmados RS256.
+
+- **Product Catalog & Multi‑Store Cart**  
+  - *What*: Home con chips categorías, Store Feed, Product Detail, carrito multi‑tienda.  
+  - *Why*: Core de ingresos; soporte para tiendas propias y de terceros.  
+  - *How*: TanStack Query, `stores`, `products`, `store_products`, `cart_items` tables.
+
+- **Checkout & Payments**  
+  - *What*: Tarjetas Stripe; Terminal Clip; Efectivo.  
+  - *Why*: Captura clientes bancarizados y no bancarizados.  
+  - *How*:  
+    - Stripe Elements v2023‑10‑16 (SAQ A).  
+    - Clip/Efectivo almacenan voucher en Storage bucket `vouchers_private`.  
+    - Edge Fn `confirm_payment` actualiza `payments` y orden.
+
+- **Wallet & Cashback (Token Ledger)**  
+  - *What*: Saldo por grupo; créditos MXN de reembolsos; slider uso parcial.  
+  - *Why*: Aumenta LTV; gamificación futura.  
+  - *How*: Tablas `wallet_accounts`, `cashback_ledger`, `credit_ledger`; cron nightly reconciliación.
+
+- **Notifications System**  
+  - *What*: Push (OneSignal), badge unread, historial.  
+  - *Why*: Mejora engagement y seguimiento de pedido.  
+  - *How*: Table `notifications` + trigger on order status change.
+
+- **Avatar & UI Personalization**  
+  - *What*: Avatar muestra “U” (guest) o inicial Nombre; dropdown contextual.  
+  - *Why*: Feedback visual del estado; quick actions.  
+  - *How*: Hash UID → color fallback; sign‑out limpia LS y crea UID guest.
+
+- **Admin Panel RBAC**  
+  - *What*:  
+    - **Super Admin**: Config global, grupos, staff, reglas cashback.  
+    - **Group Manager**: Tiendas y operaciones del grupo asignado.  
+    - **Store Manager**: Inventario y operaciones de su(s) tienda(s).  
+  - *Why*: Delegar responsabilidades sin comprometer seguridad.  
+  - *How*: Roles en `staff` table + RLS check; UI condicional a permisos.
+
+- **Driver App & Logistics**  
+  - *What*: Toggle Online, flujo 6 pasos, saldo efectivo, historial.  
+  - *Why*: Minimiza fricción de entrega; liquidaciones claras.  
+  - *How*: Realtime canales `orders:driver:{driver_id}`, Edge Fn `assign_driver`.
+
+- **Design System**  
+  - *What*: Theme dual (#070707 dark / #FFFFFF light), accent #F07167, Tailwind tokens, shadcn‑ui.  
+  - *Why*: Garantiza consistencia y velocidad de desarrollo.  
+  - *How*: Storybook; tokens en `tailwind.config.ts`; svg defaults width 100%.
+
+# User Experience  
+- **User Personas**  
+  - *Ana* – 27 a, móvil‑first, compra snacks nocturnos, guest → usuario casual.  
+  - *Luis* – 35 a, Super Admin, desktop, gestiona KPIs y promo campaigns.  
+  - *Marcela* – 30 a, Group Manager, tablet, administra 5 tiendas de una franquicia.  
+  - *Mateo* – 29 a, Store Manager, móvil, actualiza stock diario.  
+  - *Carlos* – 22 a, Driver Android, full‑time, necesita flujo rápido y claro.
+
+- **Key User Flows**  
+  - *Landing* (`/`): toggles idioma/tema · Logo · Login/Signup · Continue as Guest · beneficios registro.  
+  - *Signup* (modal stepper): Método auth → Nombre/Tel → Dirección primaria (Google Places) → Home.  
+  - *Login*: Auth → carga direcciones → Home.  
+  - *Guest*: Nombre/Tel/Dirección → Home; Wallet/Favoritos protegidos → pop‑up login.  
+  - *Checkout* (guest/log): Address select → Contact phone pre‑llenado → Payment → Confirm.  
+  - *Order tracking*: estados texto + notifs push.  
+  - *Wallet*: slider uso parcial, lista tokens por grupo.  
+  - *Admin*: Login → Dashboard KPIs → tabla órdenes → Detalle → acciones.  
+  - *Driver*: Toggle Online → Orden asignada → Paso a Paso → Voucher → Saldo.
+
+- **UI/UX Considerations**  
+  - Top Nav components: idioma, tema, ubicación, campana, avatar (U/inicial).  
+  - Avatar dropdown: guests (idioma, tema, Login/Signup) | users (idioma, tema, Profile Settings, Sign out).  
+  - Phone input: `<Select flag>` + `Input mask` (`+52` default) usando `react-phone-input-2`.  
+  - Motion: easeOutQuad 250 ms; Hover translate‑y‑1 en Cards.  
+  - Accessibility: focus ring #F07167 2 px; contraste min 4.5:1; etiquetas aria.
+
+</context>
+<PRD>
+
+# Technical Architecture  
+- System Components  
+  - **Frontends**  
+    - `apps/customer-pwa` – React 18, Vite, PWA plugin, TanStack Query.  
+    - `apps/admin-panel` – React 18, Vite, Recharts, TanStack Query.  
+    - `apps/driver-app`  – React 18, Vite, TanStack Query, Map links.  
+  - **Shared Packages**  
+    - `packages/ui` – shadcn‑ui wrapped components + Tailwind tokens.  
+    - `packages/types` – Zod schemas, TS types for DB (generated via codegen).  
+    - `packages/api-client` – Supabase JS singleton, Stripe SDK helpers, tRPC client.  
+  - **Backend**  
+    - Supabase (Auth, Postgres, Storage, Edge Functions, Realtime).  
+    - Three environments: *dev* (free tier), *staging*, *prod* (performance).  
+  - **CI/CD**  
+    - GitHub Actions: PR lint/test, `supabase db push` on *dev*, tag `v*` triggers *prod* deploy via MCP.  
+    - Nx Cloud/Turbo cache for builds; Vercel preview URLs.
+
+- Data Models  
+  - **auth.users** – `id UUID`, `is_anonymous bool`, `email`, `phone`, timestamps.  
+  - **profiles** – 1:1 `user_id`, `full_name`, `avatar_url`, preferences.  
+  - **addresses** – multi‑address, `is_primary`, geo lat/lon, Google place_id.  
+  - **wallet_accounts** – per user per token; balance numeric.  
+  - **cashback_ledger / credit_ledger** – tx based.  
+  - **stores / groups / products / product_modifiers / inventories** – catálogo.  
+  - **cart_items** – supports multi‑store.  
+  - **orders / order_items / payments / payment_records** – purchase pipeline.  
+  - **notifications** – `id`, `user_id`, `type`, `payload JSON`, `read_at`.  
+- **product_modifiers_groups / product_modifier_options** – one‑to‑many for variants.
+- **inventory_adjustments** – reason, qty, staff_id, timestamp.
+- **promo_codes** – code, type %, $, applies_to (order, product), usage limits.
+- **edge_logs** – id, function_name, payload, success, exec_ms.
+- **driver_settlements** – driver_id, amount, paid_at, reference.
+  - **postal_zones** – store coverage by CP; future polygon PostGIS.  
+  - **remote_config** – feature flags (`assignment_auto`, `gamification` etc.).  
+  - RLS Policies  
+    - Guests: `SELECT/INSERT/UPDATE/DELETE` on own `cart_items`, `orders`, `addresses`.  
+    - Staff: role‑based conditional filters by `group_id` or `store_id`.
+
+- APIs and Integrations  
+  - **Stripe Elements** – PaymentIntents, SetupIntents, Apple/Google Pay.  
+  - **Stripe Webhooks** – `payment_intent.succeeded`, `payment_intent.payment_failed` (Edge Fn).  
+  - **Clip API** – optional polling for reconciliation.  
+  - **Google Maps** – Places, Geocoding, Static Maps thumbnails.  
+  - **OneSignal** – push notifications; fallback Web Push native.  
+  - **Resend** – transactional emails (order confirmation, reset password).  
+  - **Imgproxy** – on‑the‑fly image resizing (product thumbs 256px).
+
+- Infrastructure Requirements  
+  - **Hosting** – Vercel (edge network) with custom domains.  
+  - **Observability** – Sentry (front), Grafana+Loki (Supabase logs), Logflare fallback.  
+  - **Backups** – Supabase daily; external WAL shipping to S3.  
+  - **Security** – Rate limiting via Edge Fn; helmet headers; Content‑Security‑Policy strict.
+
+- **Table Inventory (Listado completo)**
+  - **users** – descripción TBD.
+  - **profiles** – descripción TBD.
+  - **addresses** – descripción TBD.
+  - **wallet_accounts** – descripción TBD.
+  - **cashback_ledger** – descripción TBD.
+  - **credit_ledger** – descripción TBD.
+  - **groups** – descripción TBD.
+  - **stores** – descripción TBD.
+  - **store_hours** – descripción TBD.
+  - **store_special_hours** – descripción TBD.
+  - **products** – descripción TBD.
+  - **product_images** – descripción TBD.
+  - **product_modifiers_groups** – descripción TBD.
+  - **product_modifier_options** – descripción TBD.
+  - **product_categories** – descripción TBD.
+  - **store_products** – descripción TBD.
+  - **inventories** – descripción TBD.
+  - **inventory_adjustments** – descripción TBD.
+  - **carts** – descripción TBD.
+  - **cart_items** – descripción TBD.
+  - **orders** – descripción TBD.
+  - **order_items** – descripción TBD.
+  - **payments** – descripción TBD.
+  - **payment_records** – descripción TBD.
+  - **promo_codes** – descripción TBD.
+  - **promo_usage** – descripción TBD.
+  - **notifications** – descripción TBD.
+  - **postal_zones** – descripción TBD.
+  - **drivers** – descripción TBD.
+  - **driver_locations** – descripción TBD.
+  - **driver_settlements** – descripción TBD.
+  - **staff** – descripción TBD.
+  - **remote_config** – descripción TBD.
+  - **edge_logs** – descripción TBD.
+  - **service_requests_placeholder** – descripción TBD.
+
+- **API Endpoints (tRPC wrappers)**
+  - POST /orders
+  - GET /orders/{id}
+  - PATCH /orders/{id}/status
+  - POST /cart/items
+  - DELETE /cart/items/{id}
+  - POST /payments/confirm
+  - POST /wallet/apply
+  - GET /stores
+  - GET /products
+  - POST /auth/otp
+  - POST /auth/merge
+
+- **Notification Types**  
+  - `ORDER_STATUS_CHANGED` – payload {order_id, new_status}.  
+  - `PROMO_NEW` – payload {promo_id, title}.  
+  - `WALLET_CASHBACK_EARNED` – payload {amount, token}.  
+  - `DRIVER_ASSIGNED` – payload {order_id, driver_name}.  
+  - `LOW_STOCK_ALERT` – payload {product_id, stock_level}.  
+
+- **Order Status Machine**  
+  - `pending_payment` → `confirmed` → `preparing` → `ready_for_pickup` → `out_for_delivery` → `delivered`.  
+  - Cancel paths: `pending_payment` → `cancelled`; `confirmed` → `cancelled_with_refund`.  
+
+- **Payment Method Mapping**  
+  - `card_stripe`   → Stripe PaymentIntent `succeeded`.  
+  - `terminal_clip` → `payment_records` row + voucher img.  
+  - `cash`          → `payment_records` row + photo efectivo.  
+
+- **UI Component Library (packages/ui)**
+  - Button
+  - Input
+  - Card
+  - Modal
+  - Toast
+  - Dropdown
+  - Avatar
+  - Badge
+  - Chip
+  - BottomNav
+  - Sidebar
+  - TopNav
+  - Pagination
+  - Stepper
+  - Slider
+  - Tooltip
+  - Skeleton
+  - Tabs
+
+- **Admin KPIs Dashboard**
+  - Ventas Totales
+  - Órdenes
+  - Ticket Promedio
+  - Usuarios Nuevos
+  - Drivers Activos
+  - Pedidos Pendientes
+  - Cashback Emitido
+  - Cashback Canjeado
+
+- **Cron Jobs (pg_cron)**
+  - clean_abandoned_carts hourly
+  - recalculate_kpis nightly
+  - expire_promos daily
+  - low_stock_alerts hourly
+  - wallet_reconciliation nightly
+
+- **Feature Flags (remote_config)**
+  - assignment_auto
+  - apple_pay_enabled
+  - google_pay_enabled
+  - gamification_enabled
+  - home_services_enabled
+  - dark_mode_default
+  - maintenance_banner
+
+- **Email Templates (Resend)**
+  - order_confirmation
+  - order_status_update
+  - promo_new
+  - wallet_cashback_earned
+  - password_reset
+  - driver_settlement_receipt
+
+- **Driver Settlement Logic**  
+  - Efectivo recibido se agrega a `driver_settlements.pending_amount`.  
+  - Corte semanal (lunes) genera row `driver_settlements` con monto total.  
+  - Admin marca `paid_at` y adjunta referencia transferencia.  
+
+- **Gamification Tables (future)**  
+  - `xp_events` – user_id, event_type, xp_value, created_at.  
+  - `badges` – id, name, icon_url, criteria_json.  
+  - `user_badges` – user_id, badge_id, awarded_at.  
+
+- **External Service APIs**
+  - Google Places Autocomplete
+  - Google Geocoding API
+  - Stripe Webhooks
+  - OneSignal REST
+  - Resend SMTP API
+  - Clip Reconciliation API
+
+- **Test Strategy**  
+  - Unit tests: Zod schemas, utility functions (Jest).  
+  - Integration tests: Edge Functions via Supabase CLI testing env.  
+  - E2E tests: Cypress  flows guest checkout, merge account, admin CRUD.  
+  - Performance tests: k6 on /checkout endpoint; goal < 300ms P95.  
+
+- **Sentry Release Workflow**  
+  - GitHub action uploads source maps on build.  
+  - Release notes auto‑generated from PR titles.  
+  - Alerts: new errors → Slack #alerts channel.  
+
+- **Image Standard Sizes**
+  - Product thumbnail: 256x256
+  - Store banner: 1280x640
+  - Avatar Small: 40x40
+  - Badge Icon: 64x64
+
+- **Metrics Dictionary**
+  - time_to_checkout
+  - driver_pickup_delay
+  - inventory_turnover_days
+  - wallet_redemption_rate
+  - guest_conversion_rate
+  - error_rate_5xx
+  - order_success_rate
+
+- **SLA Targets**  
+  - PWA Time to Interactive < 2.5 s on 4G.  
+  - 99.9 % uptime API (measured monthly).  
+  - Payment success rate > 98 %.  
+  - Push notification latency < 5s.  
+
+- **Backup & DR**  
+  - Daily PG dump to S3 (30 d retention).  
+  - Point‑in‑time recovery via Supabase WAL < 5 min RPO.  
+  - Storage buckets replicated weekly.  
+
+- **Error Handling Patterns**  
+  - Edge Functions wrap with try/catch → log edge_logs.  
+  - Frontend use react‑toast for user-friendly error messages.  
+  - Retry strategy exponential backoff on 429 / network failures.  
+
+- **Known Technical Debt (to track)**
+  - Migrate to Stripe Connect if marketplace expands
+  - Implement PostGIS polygons for coverage
+  - Replace Clip API with Stripe Terminal
+  - Add server-side rendering for SEO
+  - Integrate Vercel analytics
+
+- **Security Checklist**
+  - HTTPS enforced
+  - CSP strict-origin-when-cross-origin
+  - HSTS 1y preload
+  - X-Frame-Options DENY
+  - Rate limit 100rpm IP
+  - JWT RS256 rotation 24h
+  - 2FA for staff
+  - Activity logs immutable
+  - Dependency scanning Snyk
+
+- **Browser Support Matrix**
+  - Chrome 95+
+  - Safari 15+
+  - Edge 100+
+  - Firefox 100+
+  - iOS 15 PWA
+  - Android 11 WebView
+
+- **CI Quality Gates**
+  - Lint pass
+  - Unit tests pass
+  - Coverage ≥ 80 %
+  - E2E smoke pass
+  - Bundle size < 1.5 MB
+  - No critical vulnerabilities
+  - DB migrations validated
+
+- **Localization Roadmap**  
+  - Fase 1: Español (default), Inglés.  
+ 
+
+- **Realtime Channels**
+  - orders:customer:{id}
+  - orders:admin
+  - orders:driver:{id}
+  - inventory:low_stock
+  - promos:new
+
+- **KPI Metrics Tracked**
+  - Gross Merchandise Value
+  - Orders per Active User
+  - Average Delivery Time
+  - Guest → User Conversion Rate
+  - Cashback Redemption %
+  - Inventory Stockout %
+  - Promo Code Usage
+  - XP Earned per User
+
+- **Accessibility Audits**
+  - Lighthouse score ≥ 90 %.  - Keyboard navigation full.  - ARIA labels icons.
+
+- **Admin Panel Features by Role**  
+  - *Super Admin Only*:   
+    - Configuración global de impuestos y métodos de pago.  
+    - CRUD grupos, reglas de cashback multi‑token.  
+    - Gestión de roles y permisos staff.  
+    - Acceso a log de Edge Functions y backups.  
+  - *Group Manager*:  
+    - Dashboard filtrado a su grupo.  
+    - Alta/baja de tiendas.  
+    - Promociones locales, códigos cupón, bundles.  
+    - Reportes de ventas por tienda y comparativo histórico.  
+  - *Store Manager*:  
+    - Cambio estado tienda (Abierta/Cerrada) en tiempo real.  
+    - Ajuste de stock, umbral mínimo, subida de fotos producto.  
+    - Impresión de tickets “Listo para recoger”.  
+    - Contacto rápido cliente via WhatsApp link.  
+
+# Development Roadmap  
+- MVP Requirements  
+  - **Foundation**  
+    - Monorepo repo scaffold, Nx/Turbo, Prettier, ESLint.  
+    - Storybook Design System v0.1 (Button, Input, Card).  
+    - DB Schema v1 & RLS baseline; Edge Fn skeleton.  
+    - Stripe sandbox integration; guest checkout ready.  
+  - **Delivery Core**  
+    - Customer PWA: Landing, Home feed, Store & Product pages.  
+    - Cart & Checkout (guest/logged) incl. phone flag input.  
+    - Order creation, payment confirmation, realtime status text.  
+    - Avatar + Dropdown, Notifications push MVP.  
+    - Admin: login, KPIs dashboard, Orders CRUD, RBAC layer.  
+    - Driver: login, toggle online, active order flow, voucher upload.  
+
+- Future Enhancements  
+  - **Wallet Plus & Gamification**  
+    - Slider use partial, XP system (subtotal/10), badges, cashback boost.  
+    - Wallet detail screens per token; analytics.  
+  - **Real‑Time Tracking**  
+    - Driver location polling → Admin map & Customer map.  
+    - PostGIS route ETAs; Haversine fallback.  
+  - **Home‑Services Kernel**  
+    - `service_requests`, booking slots, provider onboarding forms.  
+    - UI toggle in shell (feature flag off by default).  
+  - **Scale & Observability**  
+    - ETL to BigQuery, Metabase dashboards.  
+    - Advanced feature flags and A/B tests.  
+    - GDPR Edge Functions `export_user_data`, `delete_user_data`.
+
+
+# Logical Dependency Chain  
+- **Layer 0 – Foundation**  
+  - Repo scaffolding, Design System, Supabase Auth+DB, Stripe sandbox.  
+- **Layer 1 – Guest Checkout**  
+  - Anonymous UID flow, cart, address capture.  
+- **Layer 2 – Payment Processing**  
+  - PaymentIntents, terminal & cash vouchers, confirm payment Edge Fn.  
+- **Layer 3 – Order Lifecycle**  
+  - Order status machine, realtime channels, driver assignment (manual first).  
+- **Layer 4 – Wallet & Promotions**  
+  - Cashback ledger, promo codes %, $, bundles, buyXgetY.  
+- **Layer 5 – Admin Productivity**  
+  - Advanced filters, exports, inventory alerts.  
+- **Layer 6 – Gamification & Loyalty**  
+  - XP, levels, badges, referral codes.  
+- **Layer 7 – New Verticals**  
+  - Service Requests, ride‑hailing, reservations; reuse Auth & Wallet.
+
+Each layer deploys as atomic workspace to allow parallel iteration and safe rollbacks.
+
+# Risks and Mitigations  
+- **PCI Scope Expansion**  
+  - *Risk*: Custom card forms leak → SAQ A‑EP → fines.  
+  - *Mitigation*: Strict use of Stripe Elements; quarterly PenTest.
+
+- **RLS Data Leakage**  
+  - *Risk*: Incorrect policy exposes PII cross‑tenant.  
+  - *Mitigation*: Automated PostgREST tests; CI migration diff checks.
+
+- **Merge Anonymous Failure**  
+  - *Risk*: Guest orders orphan if account upgrade fails.  
+  - *Mitigation*: Transactional Fn with idempotency key; soft‑delete fallback.
+
+- **Notification Spam**  
+  - *Risk*: High frequency status updates cause opt‑outs.  
+  - *Mitigation*: Throttle Edge Fn; digest grouping.
+
+- **Single Founder Burnout**  
+  - *Risk*: Scope creep delays launch.  
+  - *Mitigation*: 2‑week backlog horizon; delegate to AI codegen & generators.
+
+
+# Appendix  
+- **Research Findings**  
+  - Guest checkout raises CVR 23 % (Shopify 2024 report).  
+  - Dark mode adoption 70 % en Gen Z (Google UX 2024).  
+- **Technical Specifications**  
+  - UI/UX Guide v1.0, Repo Structure MD, Overall Architecture MD, DB Schema MD.  
+  - Edge Functions specs JSON; API Postman collection.  
+- **Glossary**  
+  - *UID*: User Identifier (UUID v4)  
+  - *MCP*: Managed Cloud Platform (Supabase Enterprise)  
+  - *PA*: PaymentIntent (Stripe)  
+  - *XP*: Experience Points (gamification)  
+  - *RLS*: Row Level Security (PostgreSQL)  
+</PRD>
+
+
