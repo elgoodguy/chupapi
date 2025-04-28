@@ -1,16 +1,26 @@
-// Exportaciones básicas de componentes UI
-// Aquí se exportarán todos los componentes de la librería UI
+// Exportaciones de todos los componentes UI
 
-// Ejemplo de un componente Button básico
-export interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
-  children: React.ReactNode;
-  onClick?: () => void;
-}
+// Componentes básicos
+export * from './ui/button';
+export * from './ui/input';
+export * from './ui/card';
+export * from './ui/dialog';
+export * from './ui/toast';
+export * from './ui/dropdown-menu';
+export * from './ui/avatar';
+export * from './ui/badge';
+export * from './ui/chip';
 
-// Placeholder para futura implementación de componentes reales
+// Utilidades
+export * from '../lib/utils';
+
+// Información de la biblioteca
 export const uiComponents = {
-  version: '0.0.1',
+  version: '0.1.0',
   ready: true,
+  theme: {
+    dark: '#070707',
+    light: '#FFFFFF',
+    accent: '#F07167'
+  }
 };

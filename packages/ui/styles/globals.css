@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* #FFFFFF - Tema claro */
+    --foreground: 0 0% 3%; /* #070707 - Texto en tema claro */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3%;
+    
+    --primary: 0 0% 3%; /* #070707 - Color principal en tema claro */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 3%;
+    
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    
+    --accent: 7 87% 67%; /* #F07167 - Color de acento */
+    --accent-foreground: 0 0% 3%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 7 87% 67%; /* #F07167 - Color de anillo de enfoque */
+    
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 0 0% 3%; /* #070707 - Tema oscuro */
+    --foreground: 0 0% 100%; /* #FFFFFF - Texto en tema oscuro */
+    
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 100%;
+    
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 100%;
+    
+    --primary: 0 0% 100%; /* #FFFFFF - Color principal en tema oscuro */
+    --primary-foreground: 0 0% 3%;
+    
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+    
+    --accent: 7 87% 67%; /* #F07167 - Color de acento (igual en ambos temas) */
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 7 87% 67%; /* #F07167 - Color de anillo de enfoque */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Asegurar que el anillo de enfoque cumpla con los requisitos de accesibilidad */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring;
+  }
+}
