@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "generatedAt": "2025-04-28T00:57:19.648Z",
+    "tasksAnalyzed": 20,
+    "thresholdScore": 5,
+    "projectName": "Your Project Name",
+    "usedResearch": true
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Set up Monorepo Structure with Nx/Turborepo",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "List the key steps required to initialize a monorepo using Nx or Turborepo, including workspace setup for multiple apps and packages, configuring ESLint and Prettier, establishing CI/CD with GitHub Actions, and enabling build caching with Nx Cloud or Turbo cache.",
+      "reasoning": "Setting up a monorepo with Nx or Turborepo involves multiple configuration layers: initializing the workspace, structuring apps and packages, integrating code quality tools, and configuring CI/CD and caching. Each step has industry best practices and potential pitfalls, especially around workspace configuration and tool integration, making this a moderately complex foundational task.[1][2][4][5]"
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Create UI Component Library Foundation",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the process of setting up a shared UI component library using shadcn-ui and Tailwind CSS, including theme configuration, base component implementation, Storybook integration, and ensuring accessibility and theme support.",
+      "reasoning": "Building a reusable UI library with consistent theming, accessibility, and documentation is complex. It requires careful setup of Tailwind, shadcn-ui, and Storybook, as well as attention to accessibility and theme-switching, which are non-trivial to implement and test across components."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Set up Supabase Project and Database Schema",
+      "complexityScore": 8,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the steps to initialize a Supabase project, design and implement the database schema with tables and relationships, set up Row Level Security (RLS) policies, and configure multiple environments.",
+      "reasoning": "Database schema design, RLS policy implementation, and multi-environment setup in Supabase require a strong understanding of data modeling, security, and environment management. Mistakes can lead to security vulnerabilities or data integrity issues."
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "Implement Authentication System with Anonymous Accounts",
+      "complexityScore": 9,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "List the steps to configure Supabase Auth for multiple providers, implement anonymous account flows, create Edge Functions for account merging, set up JWT configuration, and build the client integration.",
+      "reasoning": "Implementing a robust authentication system with multiple providers, anonymous flows, secure JWT handling, and account merging logic is highly complex and security-sensitive, requiring careful planning and testing."
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Develop Customer PWA Shell and Navigation",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Describe the steps to scaffold the Customer PWA, implement navigation and layout, integrate theme switching, and set up routing and user avatar logic.",
+      "reasoning": "Building the PWA shell involves responsive layout, navigation, theming, and user state handling. While standard, it requires attention to UX and integration with shared components and routing."
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "Implement Product Catalog and Store Listing",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Outline the process for developing the product catalog and store listing, including category filtering, product detail pages, data fetching with TanStack Query, and image handling with Imgproxy.",
+      "reasoning": "Catalog and listing features require integration with backend data, efficient data fetching, image optimization, and UI/UX considerations for filtering and detail views, adding to the complexity."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Develop Multi-Store Shopping Cart",
+      "complexityScore": 8,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the steps to implement a shopping cart supporting multiple stores, including cart state management, Supabase integration, UI grouping, persistence, and API endpoint creation.",
+      "reasoning": "Multi-store cart logic introduces complexity in grouping, persistence, and synchronization between frontend and backend, especially for both anonymous and logged-in users."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement Guest Checkout Flow",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "List the steps to build a guest checkout flow, including user input handling, phone and address components, anonymous user association, and stepper UI implementation.",
+      "reasoning": "Guest checkout must balance minimal data capture with validation and user experience, requiring integration with external APIs and careful state management."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Integrate Stripe Payment Processing",
+      "complexityScore": 9,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Detail the steps to integrate Stripe Elements, implement PaymentIntents and SetupIntents, create Edge Functions for payment confirmation, set up webhooks, and build the payment UI.",
+      "reasoning": "Payment integration is highly complex due to security, compliance, asynchronous flows, and the need for robust error handling and user feedback."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Implement Cash and Terminal Payment Options",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Describe the process for adding cash and terminal payment options, including database structure, voucher upload, storage configuration, and Edge Function updates.",
+      "reasoning": "Supporting alternative payment methods involves backend changes, secure file handling, and updates to payment logic, but is less complex than card payment integration."
+    },
+    {
+      "taskId": 11,
+      "taskTitle": "Develop Order Creation and Tracking",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "List the steps to implement order creation, status management, real-time updates, tracking UI, notifications, and API endpoints.",
+      "reasoning": "Order management requires transactional logic, real-time updates, state machines, and integration across frontend and backend, making it a complex, multi-faceted task."
+    },
+    {
+      "taskId": 12,
+      "taskTitle": "Implement Wallet and Cashback System",
+      "complexityScore": 8,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the implementation of wallet and cashback systems, including database design, UI, partial usage logic, cashback calculation, and reconciliation jobs.",
+      "reasoning": "Wallet and cashback systems involve financial logic, transactional integrity, user interface, and background processing, all of which require careful design and testing."
+    },
+    {
+      "taskId": 13,
+      "taskTitle": "Set up Notifications System",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Describe the steps to integrate push notifications, implement notification tables and triggers, build the notification center UI, and set up throttling.",
+      "reasoning": "Notification systems require integration with third-party services, backend triggers, UI components, and anti-spam measures, making them moderately complex."
+    },
+    {
+      "taskId": 14,
+      "taskTitle": "Develop Admin Panel Foundation and RBAC",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "List the steps to scaffold the Admin Panel, implement authentication and RBAC, build the UI layout, dashboard, and role-specific views.",
+      "reasoning": "Admin panels with RBAC require secure authentication, permission logic, and dynamic UI rendering based on roles, which are complex to implement and test."
+    },
+    {
+      "taskId": 15,
+      "taskTitle": "Implement Admin Order Management",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Detail the process for building order management in the Admin Panel, including table views, detail pages, status updates, real-time updates, and export functionality.",
+      "reasoning": "Order management in the admin context involves data-heavy UI, real-time updates, and admin-specific actions, but leverages existing order logic."
+    },
+    {
+      "taskId": 16,
+      "taskTitle": "Develop Inventory and Product Management",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the steps to implement inventory and product management, including CRUD operations, modifier management, inventory adjustments, alerts, and image handling.",
+      "reasoning": "Inventory and product management require robust CRUD interfaces, modifier logic, and background jobs for alerts, but follow established patterns."
+    },
+    {
+      "taskId": 17,
+      "taskTitle": "Create Driver App Foundation",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "List the steps to scaffold the Driver App, implement authentication, online toggle, real-time order assignment, delivery flow UI, and map integration.",
+      "reasoning": "Driver app foundation involves real-time features, authentication, and delivery flow logic, but is scoped to core app scaffolding and flows."
+    },
+    {
+      "taskId": 18,
+      "taskTitle": "Implement Driver Order Management and Settlements",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Describe the process for building driver order management, voucher upload, cash settlement tracking, settlement logic, and history views.",
+      "reasoning": "Driver order management and settlements involve financial tracking, file uploads, and UI, but are less complex than core payment or order logic."
+    },
+    {
+      "taskId": 19,
+      "taskTitle": "Set up Observability and Error Handling",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "List the steps to integrate Sentry, set up Grafana+Loki, implement edge log tracking, standardize error handling, and add API rate limiting.",
+      "reasoning": "Observability and error handling require integration with external services, backend logging, and consistent error patterns, which are moderately complex."
+    },
+    {
+      "taskId": 20,
+      "taskTitle": "Implement Localization and Finalize PWA Configuration",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the steps to implement i18n support, language toggling, finalize PWA configuration, set up caching strategies, and configure security headers.",
+      "reasoning": "Localization and PWA configuration involve multiple apps and require attention to detail, but follow established patterns and are less complex than core business logic."
+    }
+  ]
+}
